@@ -24,13 +24,17 @@ jobs:
     needs: check-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v5
+
       - name: Set up .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: |
-            '9.0.x'
-      - run: dotnet restore
+          dotnet-version: 9.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
       - name: Run unit tests
         run: dotnet test --no-restore --logger trx --collect:"XPlat Code Coverage"
 
@@ -44,7 +48,9 @@ jobs:
     needs: check-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v5
+
       - name: Run security scan
         run: |
           dotnet list package --vulnerable --include-transitive
@@ -53,12 +59,13 @@ jobs:
     needs: check-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v5
+        
       - name: Set up .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: |
-            '9.0.x'
+          dotnet-version: 9.0.x
 
       - name: Run code analysis
         run: dotnet build --configuration Release --verbosity normal /p:TreatWarningsAsErrors=true
