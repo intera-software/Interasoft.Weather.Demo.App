@@ -1,30 +1,27 @@
-name: Test
+name: Testing
 
 on:
-  workflow_run:
-    workflows:
-      - Build
-    types:
-      - completed
+  workflow_dispatch:
+  push:
     branches:
       - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+  id-token: write
 
 jobs:
-  check-build:
-    runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    outputs:
-      build-succeeded: ${{ steps.check.outputs.result }}
-    steps:
-      - name: Check build status
-        id: check
-        run: echo "result=success" >> $GITHUB_OUTPUT
-
   unit-tests:
-    needs: check-build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Check out repo
         uses: actions/checkout@v5
 
       - name: Set up .NET
@@ -32,36 +29,38 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Test Solution
+        run: dotnet test --configuration Debug --logger "trx;LogFileName=test-results.trx" /p:CoverletOutputFormatter="cobertura" --collect:"XPlat Code Coverage"
 
-      - name: Run unit tests
-        run: dotnet test --no-restore --logger trx --collect:"XPlat Code Coverage"
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4.6.2
+      - name: Report test results
+        uses: dorny/test-reporter@v2.1.1
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && !cancelled() }}
         with:
-          name: unit-test-results
-          path: TestResults/
+          name: Test Results
+          path: '**/test-results.trx'
+          reporter: dotnet-trx
+          fail-on-error: true
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true
 
   security-scan:
-    needs: check-build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
       - name: Run security scan
-        run: |
-          dotnet list package --vulnerable --include-transitive
+        run: dotnet list package --vulnerable --include-transitive
 
   code-quality:
-    needs: check-build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        
+
       - name: Set up .NET
         uses: actions/setup-dotnet@v5
         with:
