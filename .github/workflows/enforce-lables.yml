@@ -29,6 +29,5 @@ jobs:
           !contains(github.event.pull_request.labels.*.name, 'needs-qa') &&
           !contains(github.event.pull_request.labels.*.name, 'security-hold')
         run: |
-          echo "✅ No blocking labels found - PR can be merged"
           echo "### :white_check_mark: No blocking labels found" >> $GITHUB_STEP_SUMMARY
           echo "This PR can be merged" >> $GITHUB_STEP_SUMMARY
