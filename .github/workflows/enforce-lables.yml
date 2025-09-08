@@ -18,10 +18,35 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'needs-qa') ||
           contains(github.event.pull_request.labels.*.name, 'security-hold')
         run: |
-          echo "::error::This PR has blocking labels that prevent merging"
-          echo "### :x: Blocking labels found" >> $GITHUB_STEP_SUMMARY
-          echo "Remove the following labels to allow merging:" >> $GITHUB_STEP_SUMMARY
-          echo "- hold, needs-qa or security-hold" >> $GITHUB_STEP_SUMMARY
+          echo "::error::🚫 This PR has blocking labels that prevent merging"
+
+          # Create a pretty formatted message with colors and emojis
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🛑 **Merge Blocked** 
+
+          > **⚠️ Critical Issue:** This pull request contains blocking labels that prevent it from being merged.
+
+          ### 📋 **Action Required**
+          Remove the following labels to proceed with merging:
+
+          | Label | Status | Action |
+          |-------|--------|--------|
+          | 🔒 **hold** | ❌ Blocking | Remove to unblock |
+          | 🧪 **needs-qa** | ❌ Blocking | Complete QA process |
+          | 🔐 **security-hold** | ❌ Blocking | Resolve security concerns |
+
+          ---
+
+          ### 🚀 **Next Steps**
+          1. **Review** the blocking labels above
+          2. **Complete** any required actions (QA, security review, etc.)
+          3. **Remove** the blocking labels
+          4. **Re-run** the workflow to proceed with merge
+
+          > 💡 **Tip:** Once all blocking labels are removed, the merge process will automatically continue!
+
+          EOF
+
           exit 1
       - name: No blocking labels
         if: |
@@ -29,5 +54,36 @@ jobs:
           !contains(github.event.pull_request.labels.*.name, 'needs-qa') &&
           !contains(github.event.pull_request.labels.*.name, 'security-hold')
         run: |
-          echo "### :white_check_mark: No blocking labels found" >> $GITHUB_STEP_SUMMARY
-          echo "This PR can be merged" >> $GITHUB_STEP_SUMMARY
+          echo "✅ No blocking labels found - PR can be merged"
+
+          # Create a pretty formatted success message with colors and emojis
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🎉 **Ready to Merge!** 
+
+          > **✨ Great news!** This pull request has passed all label checks and is clear for merging.
+
+          ### 🔍 **Label Check Results**
+          | Check | Status | Result |
+          |-------|--------|--------|
+          | 🔒 **hold** | ✅ Clear | No blocking hold labels |
+          | 🧪 **needs-qa** | ✅ Clear | QA requirements met |
+          | 🔐 **security-hold** | ✅ Clear | No security concerns |
+
+          ---
+
+          ### 🚀 **All Systems Go!**
+          - ✅ **Label validation:** Passed
+          - ✅ **Merge readiness:** Confirmed  
+          - ✅ **Workflow status:** Green light
+
+          > 🎯 **Ready for action:** This PR is now eligible for merging and can proceed through your standard merge process!
+
+          ---
+          <div align="center">
+
+          **🌟 Happy merging! 🌟**
+
+          </div>
+
+          EOF
+        
