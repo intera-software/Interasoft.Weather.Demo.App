@@ -10,10 +10,29 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v5
+
+      - name: Set up .Net
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Verify format
+        run: dotnet format --verify-no-changes
+
   build-artifacts:
     name: Build Artifacts
     runs-on: ubuntu-latest
-
+    needs:
+      - lint
+    permissions:
+      security-events: write
+      id-token: write
     steps:
       - name: Check out repo
         uses: actions/checkout@v5
@@ -23,6 +42,13 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Print environment
+        run: |
+          whoami
+          dotnet --info
+          echo "GitHub ref: $GITHUB_REF"
+          echo "GitHub event: $GITHUB_EVENT"
+          
       - name: Build solution
         run: dotnet build
               
