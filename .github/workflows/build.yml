@@ -5,6 +5,11 @@ on:
   push:
     branches: ['main']
   pull_request:
+    types: [opened, synchronize, reopened]
+    branches-ignore:
+      - main
+  workflow_call:
+    inputs: {}
 
 permissions:
   contents: read
@@ -24,6 +29,27 @@ jobs:
       
       - name: Verify format
         run: dotnet format --verify-no-changes
+ 
+  check-secrets-needed:
+    runs-on: ubuntu-latest
+    outputs:
+      secrets-needed: ${{ steps.check.outputs.secrets-needed }}
+    steps:
+      - id: check
+        run: |
+          BASE_REF="${{ github.base_ref }}"
+          HAS_LABEL="${{ contains(github.event.pull_request.labels.*.name, 'needs-secrets') }}"
+          
+          echo "Base ref: $BASE_REF"
+          echo "Has needs-secrets label: $HAS_LABEL"
+          
+          if [[ "$BASE_REF" == "main" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "secrets-needed=true" >> $GITHUB_OUTPUT
+            echo "✅ Secrets access required"
+          else
+            echo "secrets-needed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No secrets access needed"
+          fi
 
   build-artifacts:
     name: Build Artifacts
@@ -48,7 +74,7 @@ jobs:
           dotnet --info
           echo "GitHub ref: $GITHUB_REF"
           echo "GitHub event: $GITHUB_EVENT"
-          
+
       - name: Build solution
         run: dotnet build
               
